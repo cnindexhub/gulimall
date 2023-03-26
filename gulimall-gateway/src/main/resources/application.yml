@@ -23,3 +23,28 @@ spring:
           uri: https://www.bilibili.com/
           predicates:
             - Query=url,bilibili
+
+
+        - id: product-route
+          uri: lb://gulimall-product
+          predicates:
+            - Path=/api/product/**
+          filters:
+            - RewritePath=/api/(?<segment>.*),/$\{segment}
+
+        - id: thrid-party-route
+          uri: lb://gulimall-third-party
+          predicates:
+            - Path=/api/thridparty/**
+          filters:
+            - RewritePath=/api/thridparty(?<segment>.*),$\{segment}
+
+        ## 前端项目， /api
+        - id: admin_route
+          uri: lb://renren-fast
+          predicates:
+            - Path=/api/**
+          filters:
+            - RewritePath=/api/(?<segment>.*),/renren-fast/$\{segment}
+
+

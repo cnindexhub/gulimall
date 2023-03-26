@@ -3,7 +3,14 @@ package com.atguigu.gulimall.product.controller;
 import java.util.Arrays;
 import java.util.Map;
 
+import com.atguigu.common.validator.UpdateStatusGroup;
+import com.atguigu.common.validator.group.AddGroup;
+import com.atguigu.common.validator.group.UpdateGroup;
+import lombok.extern.slf4j.Slf4j;
+import org.bouncycastle.asn1.pkcs.MacData;
+import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -16,7 +23,6 @@ import com.atguigu.common.utils.PageUtils;
 import com.atguigu.common.utils.R;
 
 
-
 /**
  * 品牌
  *
@@ -24,6 +30,7 @@ import com.atguigu.common.utils.R;
  * @email DengTPengTFei@163.com
  * @date 2023-02-15 22:32:53
  */
+@Slf4j
 @RestController
 @RequestMapping("product/brand")
 public class BrandController {
@@ -58,7 +65,7 @@ public class BrandController {
      */
     @RequestMapping("/save")
     // @RequiresPermissions("product:brand:save")
-    public R save(@RequestBody BrandEntity brand){
+    public R save(@Validated({ AddGroup.class }) @RequestBody BrandEntity brand){
 		brandService.save(brand);
 
         return R.ok();
@@ -69,9 +76,18 @@ public class BrandController {
      */
     @RequestMapping("/update")
     // @RequiresPermissions("product:brand:update")
-    public R update(@RequestBody BrandEntity brand){
-		brandService.updateById(brand);
+    public R update(@Validated({ UpdateGroup.class }) @RequestBody BrandEntity brand){
+        brandService.updateDetail(brand);
+        return R.ok();
+    }
 
+    /**
+     * 修改品牌显示状态
+     */
+    @RequestMapping("/update/status")
+    // @RequiresPermissions("product:brand:update")
+    public R updateStatus(@Validated({ UpdateStatusGroup.class }) @RequestBody BrandEntity brand){
+        brandService.updateById(brand);
         return R.ok();
     }
 

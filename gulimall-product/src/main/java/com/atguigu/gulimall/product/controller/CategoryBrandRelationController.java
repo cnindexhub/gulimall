@@ -3,7 +3,10 @@ package com.atguigu.gulimall.product.controller;
 import java.util.Arrays;
 import java.util.Map;
 
+import com.atguigu.common.exception.RRException;
+import com.atguigu.common.validator.group.AddGroup;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -58,9 +61,13 @@ public class CategoryBrandRelationController {
      */
     @RequestMapping("/save")
     // @RequiresPermissions("product:categorybrandrelation:save")
-    public R save(@RequestBody CategoryBrandRelationEntity categoryBrandRelation){
-		categoryBrandRelationService.save(categoryBrandRelation);
-
+    public R save(@Validated({ AddGroup.class })@RequestBody CategoryBrandRelationEntity categoryBrandRelation){
+        boolean flag = categoryBrandRelationService.exist(categoryBrandRelation);
+        if (!flag) {
+            categoryBrandRelationService.saveDetail(categoryBrandRelation);
+        } else {
+            throw new RRException("该关联分类已经存在！");
+        }
         return R.ok();
     }
 

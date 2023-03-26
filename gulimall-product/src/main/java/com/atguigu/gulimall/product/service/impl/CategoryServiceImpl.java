@@ -1,8 +1,16 @@
 package com.atguigu.gulimall.product.service.impl;
 
+import com.atguigu.gulimall.product.dao.CategoryBrandRelationDao;
+import com.atguigu.gulimall.product.entity.BrandEntity;
+import com.atguigu.gulimall.product.entity.CategoryBrandRelationEntity;
+import com.atguigu.gulimall.product.service.CategoryBrandRelationService;
+import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
+import org.bouncycastle.util.Arrays;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -16,10 +24,18 @@ import com.atguigu.common.utils.Query;
 import com.atguigu.gulimall.product.dao.CategoryDao;
 import com.atguigu.gulimall.product.entity.CategoryEntity;
 import com.atguigu.gulimall.product.service.CategoryService;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
+
+import javax.xml.ws.soap.Addressing;
 
 
 @Service("categoryService")
 public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity> implements CategoryService {
+
+
+    @Autowired
+    private CategoryBrandRelationDao categoryBrandRelationDao;
 
     @Override
     public PageUtils queryPage(Map<String, Object> params) {
@@ -44,6 +60,66 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
             return (item1.getSort() == null ? 0 : item1.getSort()) - (item2.getSort() == null ? 0 : item2.getSort());
         }).collect(Collectors.toList());
         return list;
+    }
+
+    @Override
+    public void removeMenusByIds(List<Long> ids) {
+        // TODO 删除之前需要做的业务逻辑
+        baseMapper.deleteBatchIds(ids);
+    }
+
+    /**
+     * 获取一个分类编号以及其所有的父分类编号以从上到下的顺序组成的数组
+     * @param catelogId 分类编号
+     * @return 一个分类编号以及其所有的父分类编号以从上到下的顺序组成的数组
+     */
+    @Override
+    public List<Long> findCatelogPath(Long catelogId) {
+        List<Long> catelogPath = new ArrayList<>();
+        findCatelogPath(catelogPath, catelogId);
+        Collections.reverse(catelogPath);
+        return catelogPath;
+    }
+
+
+    /**
+     * 修改分类信息 及其相关信息处理
+     * @param category 分类信息
+     */
+    @Transactional(rollbackFor = Exception.class)
+    @Override
+    public void updateDetail(CategoryEntity category) {
+        // 修改分类信息
+        updateById(category);
+        String categoryName = category.getName();
+        if (!StringUtils.hasText(categoryName)) {
+            return;
+        }
+        // 填充品牌和分类关联信息
+        CategoryBrandRelationEntity categoryBrandRelationEntity = new CategoryBrandRelationEntity();
+        categoryBrandRelationEntity.setCatelogName(categoryName);
+        categoryBrandRelationEntity.setCatelogId(category.getCatId());
+        // 条件为当前修改的分类编号
+        UpdateWrapper<CategoryBrandRelationEntity> updateWrapper = new UpdateWrapper<>();
+        updateWrapper.eq("catelog_id", category.getCatId());
+        // 修改品牌和分类关联信息
+        categoryBrandRelationDao.update(categoryBrandRelationEntity, updateWrapper);
+
+        // TODO 其他相关操作
+    }
+
+
+    /**
+     * 递归查找一个分类编号以及其所有的父分类编号以从上到下的顺序组成的数组
+     * @param catelogPath 一个分类编号以及其所有的父分类编号以从上到下的顺序组成的数组
+     * @param catelogId 分类编号
+     */
+    public void findCatelogPath(List<Long> catelogPath, Long catelogId) {
+        catelogPath.add(catelogId);
+        CategoryEntity categoryEntity = baseMapper.selectById(catelogId);
+        if (categoryEntity.getParentCid() != 0) {
+            findCatelogPath(catelogPath, categoryEntity.getParentCid());
+        }
     }
 
 
